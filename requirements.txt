@@ -1,0 +1,28 @@
+# --- Core Framework ---
+Flask==3.0.3
+gunicorn==22.0.0  # para despliegue en Render o Railway
+
+# --- Data & Google Sheets ---
+pandas==2.2.2
+requests==2.32.3
+
+# --- OpenAI Integration ---
+openai>=1.44.0
+python-dotenv==1.0.1  # para manejar API keys desde .env
+
+# --- Machine Learning (predicciones SLA) ---
+scikit-learn==1.5.2
+numpy==1.26.4
+joblib==1.4.2
+
+# --- Visualizaciones (gráficos, si usas Python para plots) ---
+matplotlib==3.9.2
+
+# --- Opcional: si usas Prophet para forecast (puedes comentarlo si no lo usarás aún) ---
+# prophet==1.1.5
+
+# --- Despliegue seguro ---
+itsdangerous==2.2.0
+Werkzeug==3.0.3
+Jinja2==3.1.4
+click==8.1.7

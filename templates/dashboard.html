@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>📊 Dashboard de Tickets</title>
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f6f9fc, #eef3f8);
+      color: #2c3e50;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: white;
+      padding: 15px 30px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .dashboard-container, #tabla-container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    /* === Panel general (igual altura, animación suave) === */
+    .panel-equal {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.6s ease-out;
+    }
+
+    .panel-equal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* === KPI === */
+    .kpi-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-top: 15px;
+    }
+
+    .kpi-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      transform: scale(0.95);
+      opacity: 0;
+      transition: all 0.4s ease-in-out;
+    }
+
+    .kpi-card.visible {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .kpi-card:hover {
+      transform: scale(1.03);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    }
+
+    .kpi-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    /* === Gráfico === */
+    .chart-container {
+      height: 100%;
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.7s ease-out;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .chart-container.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    canvas {
+      max-width: 100%;
+      height: 350px !important;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.9rem;
+      color: #888;
+      margin-top: 40px;
+    }
+
+    /* === Tabla === */
+    #tabla-container {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      width: 100%;
+    }
+
+    #tabla-datos th, #tabla-datos td {
+      vertical-align: middle;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .enlace-recurso {
+      text-decoration: none;
+      font-weight: 500;
+      color: #0d6efd;
+      cursor: pointer;
+    }
+
+    .enlace-recurso:hover {
+      text-decoration: underline;
+    }
+
+    /* === Separación mínima entre columnas === */
+    .gx-2 {
+      --bs-gutter-x: 0.75rem !important;
+    }
+</style>
+
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <img src="{{ url_for('static', filename='img/logo_sifods.svg') }}" alt="SIFODS" height="45">
+      <h5 class="m-0 fw-semibold text-secondary">Sistema de Análisis de Tickets</h5>
+    </div>
+  </header>
+
+  <!-- ===== CONTENIDO PRINCIPAL ===== -->
+  <div class="dashboard-container">
+    <h2>📊 Dashboard de Tickets – Vigilancia Tecnológica</h2>
+    <p class="text-muted">Visualiza en segundos el estado general de tus casos registrados.</p>
+
+    <!-- === DISTRIBUCIÓN EN DOS COLUMNAS (KPI + GRÁFICO) === -->
+    <div class="row align-items-stretch gx-2 mt-3">
+      
+      <!-- 🟦 Columna izquierda: KPI -->
+      <div class="col-lg-7 col-md-12">
+        <div class="panel-equal h-100 p-3 bg-white rounded shadow-sm">
+          <h5 class="mb-3 text-primary">
+            <i class="fa-solid fa-gauge-high me-1"></i> Indicadores Clave (KPI)
+          </h5>
+
+          <div class="kpi-cards">
+            <!-- Total tickets -->
+            <div class="kpi-card" style="border-top: 5px solid #007bff;">
+              <div class="fw-semibold text-primary">
+                <i class="fa-solid fa-chart-simple me-1"></i> Total Tickets
+              </div>
+              <div class="kpi-value text-primary">{{ kpis.total_tickets }}</div>
+            </div>
+
+            <!-- Estados dinámicos -->
+            {% for estado, cantidad in kpis.items() %}
+              {% if estado != "total_tickets" and estado != "error" %}
+                {% set estado_lower = estado|lower %}
+                {% if 'cerrado' in estado_lower %}
+                  {% set color = '#28a745' %}{% set icon = 'fa-circle-check' %}
+                {% elif 'abierto' in estado_lower %}
+                  {% set color = '#dc3545' %}{% set icon = 'fa-bug' %}
+                {% elif 'pendiente' in estado_lower %}
+                  {% set color = '#ffc107' %}{% set icon = 'fa-hourglass-half' %}
+                {% elif 'rechazado' in estado_lower %}
+                  {% set color = '#6c757d' %}{% set icon = 'fa-circle-xmark' %}
+                {% elif 'asignado' in estado_lower %}
+                  {% set color = '#17a2b8' %}{% set icon = 'fa-user-check' %}
+                {% elif 'atendido' in estado_lower %}
+                  {% set color = '#6610f2' %}{% set icon = 'fa-headset' %}
+                {% elif 'proceso' in estado_lower %}
+                  {% set color = '#20c997' %}{% set icon = 'fa-gear' %}
+                {% else %}
+                  {% set color = '#0d6efd' %}{% set icon = 'fa-circle-info' %}
+                {% endif %}
+                <div class="kpi-card" style="border-top: 5px solid {{ color }};">
+                  <div class="fw-semibold" style="color: {{ color }};">
+                    <i class="fa-solid {{ icon }} me-1"></i> {{ estado }}
+                  </div>
+                  <div class="kpi-value" style="color: {{ color }};">{{ cantidad }}</div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- 🟨 Columna derecha: Gráfico -->
+      <div class="col-lg-5 col-md-12">
+        <div class="panel-equal h-100 p-3 bg-white rounded shadow-sm d-flex flex-column justify-content-center align-items-center">
+          <h5 class="mb-3 text-primary">
+            <i class="fa-solid fa-chart-pie me-1"></i> Distribución de Tickets
+          </h5>
+          <canvas id="grafico" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- === TABLA DE REGISTROS FILTRADOS === -->
+  <div id="tabla-container" class="mt-5">
+    <h5 id="tabla-titulo" class="fw-bold text-secondary" style="display:none;">
+      🧾 Registros filtrados:
+    </h5>
+    <div class="table-responsive">
+      <table id="tabla-datos" class="table table-striped table-hover align-middle w-100" style="display:none;">
+        <thead class="table-light">
+          <tr>
+            <th>TICKET</th>
+            <th>FECHA DE REGISTRO</th>
+            <th>DOCUMENTO</th>
+            <th>DATOS PERSONALES</th>
+            <th>TIPO REQUERIMIENTO</th>
+            <th>REQUERIMIENTO</th>
+            <th>DESCRIPCIÓN</th>
+            <th>ENLACE DE RECURSOS</th>
+            <th>DIRECCIÓN</th>
+            <th>ÁREA</th>
+            <th>PROGRAMA</th>
+            <th>ESTADO</th>
+            <th>RESPUESTA</th>
+            <th>FECHA DERIVACIÓN</th>
+            <th>HORA DERIVACIÓN</th>
+            <th>FECHA ATENCIÓN</th>
+            <th>HORA ATENCIÓN</th>
+            <th>ÁREA TI</th>
+            <th>DNI FUNCIONAL</th>
+            <th>FUNCIONAL TI</th>
+            <th>NIVEL AVANCE</th>
+            <th>APOYO TI</th>
+            <th>FECHA ASIGNACIÓN</th>
+            <th>PRIORIDAD</th>
+            <th>FECHA TENTATIVA</th>
+            <th>PRODUCTO</th>
+            <th>TIPO TICKET</th>
+            <th>FECHA FINAL ATENCIÓN</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== MODALES ===== -->
+  <div class="modal fade" id="modalDescripcion" tabindex="-1" aria-labelledby="modalDescripcionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="modalDescripcionLabel">Descripción del Ticket</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body" id="descripcionContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalRespuesta" tabindex="-1" aria-labelledby="modalRespuestaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="modalRespuestaLabel">Respuesta del Ticket</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body" id="respuestaContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalDatos" tabindex="-1" aria-labelledby="modalDatosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title" id="modalDatosLabel">Datos Personales del Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body" id="datosContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    Desarrollado con <i class="fa-solid fa-brain"></i> Flask + OpenAI |
+    <a href="#">Versión 1.0</a>
+  </footer>
+
+  <!-- ===== SCRIPTS ===== -->
+
+  <!-- jQuery (para DataTables y utilidades generales) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Bootstrap (necesario para modales y tooltips) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Chart.js y su plugin oficial para etiquetas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+  <!-- DataTables -->
+  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+  <!-- Exportación a Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- FontAwesome -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
+
+  <!-- === Inyectar los KPIs desde Flask === -->
+  <script>
+    const kpis = {{ kpis | tojson }};
+  </script>
+
+  <!-- === Script principal === -->
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

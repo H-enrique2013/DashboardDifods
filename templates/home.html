@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Portal de Análisis de Tickets</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    /* === General === */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #e9f1f7, #f8fbff);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+    }
+
+    header {
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 15px 30px;
+    }
+
+    header img {
+      height: 50px;
+    }
+
+    /* === Hero === */
+    .hero-section {
+      text-align: center;
+      margin: 60px 0 30px;
+    }
+
+    .hero-title {
+      font-weight: 700;
+      color: #2c3e50;
+      font-size: 2rem;
+    }
+
+    .hero-subtitle {
+      color: #6c757d;
+      font-size: 1.1rem;
+    }
+
+    /* === Cards modernas === */
+    .card-options-container {
+      flex: 1;
+      display: flex;
+      align-items: center;          /* Centra verticalmente */
+      justify-content: center;      /* Centra horizontalmente */
+      padding: 40px 20px;
+    }
+
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: stretch;
+      gap: 25px;
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    .option-card {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 18px;
+      background: white;
+      border-radius: 14px;
+      padding: 25px 28px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.3s ease-in-out;
+      flex: 1 1 45%;
+      min-width: 340px;
+      max-width: 500px;
+      min-height: 120px;
+      border-left: 6px solid transparent;
+    }
+
+    .option-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    }
+
+    /* === Icono circular === */
+    .icon-circle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      font-size: 1.7rem;
+      flex-shrink: 0;
+      transition: 0.3s;
+    }
+
+    /* === Hover con cambio de color === */
+    .option-card:hover .icon-circle.bg-primary { background-color: #0d6efd; color: white; }
+    .option-card:hover .icon-circle.bg-success { background-color: #198754; color: white; }
+    .option-card:hover .icon-circle.bg-warning { background-color: #ffc107; color: white; }
+    .option-card:hover .icon-circle.bg-dark { background-color: #212529; color: white; }
+
+    .option-card h6 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .option-card p {
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin: 0;
+    }
+
+    /* === Footer === */
+    footer {
+      background: #2c3e50;
+      color: #f0f0f0;
+      text-align: center;
+      padding: 15px 0;
+      font-size: 0.9rem;
+      margin-top: auto;
+    }
+
+    footer a {
+      color: #00c4b4;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* === Responsive === */
+    @media (max-width: 768px) {
+      .option-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        min-height: 140px;
+        padding: 20px;
+      }
+
+      .icon-circle {
+        width: 55px;
+        height: 55px;
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ======= Header ======= -->
+  <header class="d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <img src="{{ url_for('static', filename='img/logo_sifods.svg') }}" alt="SIFODS">
+      <h5 class="m-0 fw-semibold text-secondary">SISTEMA DE ANÁLISIS DE TICKETS</h5>
+    </div>
+  </header>
+
+  <!-- ======= Hero ======= -->
+  <section class="hero-section">
+    <h1 class="hero-title">🎯 Bienvenido al Portal de Análisis de Tickets</h1>
+    <p class="hero-subtitle">Selecciona la vista o herramienta que deseas analizar</p>
+  </section>
+
+  <!-- ======= Cards ======= -->
+  <div class="card-options-container">
+    <div class="card-grid">
+
+      <!-- Dashboard General -->
+      <a href="/dashboard" class="option-card border-start border-4 border-primary shadow-sm">
+        <div class="icon-circle bg-primary bg-opacity-10 text-primary">
+          <i class="fa-solid fa-chart-column"></i>
+        </div>
+        <div>
+          <h6>Dashboard General</h6>
+          <p>Visualiza métricas globales de los tickets.</p>
+        </div>
+      </a>
+
+      <!-- Especialistas Funcional TI -->
+      <a href="/dashboard-especialistas" class="option-card border-start border-4 border-success shadow-sm">
+        <div class="icon-circle bg-success bg-opacity-10 text-success">
+          <i class="fa-solid fa-user-gear"></i>
+        </div>
+        <div>
+          <h6>Especialistas Funcional TI</h6>
+          <p>Desempeño y requerimientos por especialista.</p>
+        </div>
+      </a>
+
+      <!-- Dashboard IA -->
+      <a href="/dashboard-ai" class="option-card border-start border-4 border-warning shadow-sm">
+        <div class="icon-circle bg-warning bg-opacity-10 text-warning">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+        <div>
+          <h6>Dashboard con Inteligencia Artificial</h6>
+          <p>Predicciones y clasificaciones automáticas.</p>
+        </div>
+      </a>
+
+      <!-- API Tickets -->
+      <a href="/api/tickets" class="option-card border-start border-4 border-dark shadow-sm">
+        <div class="icon-circle bg-dark bg-opacity-10 text-dark">
+          <i class="fa-solid fa-code"></i>
+        </div>
+        <div>
+          <h6>API de Tickets (JSON)</h6>
+          <p>Consulta los datos desde endpoints REST.</p>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ======= Footer ======= -->
+  <footer>
+    Desarrollado con <i class="fa-solid fa-brain"></i> Flask + OpenAI |
+    <a href="#">Versión 1.0</a>
+  </footer>
+</body>
+</html>
