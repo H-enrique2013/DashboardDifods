@@ -1,1 +1,5 @@
 .env
+# Entorno virtual
+agenteticket/
+env/
+venv/
