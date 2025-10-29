@@ -311,7 +311,15 @@ function actualizarGrafico(rango = "semana", fechaInicio = null, fechaFin = null
           label: "Tickets atendidos",
           data: valores,
           backgroundColor: "rgba(25, 135, 84, 0.8)",
-          borderRadius: 6
+          borderRadius: 6,
+          datalabels: {
+            display: true,
+            color: "#000",
+            anchor: "end",
+            align: "top",
+            font: { weight: "bold" },
+            formatter: (value) => value
+          }
         },
         {
           type: "line",
@@ -321,22 +329,26 @@ function actualizarGrafico(rango = "semana", fechaInicio = null, fechaFin = null
           borderWidth: 2,
           tension: 0.3,
           fill: false,
-          pointBackgroundColor: "#0d6efd"
+          pointBackgroundColor: "#0d6efd",
+          datalabels: { display: false }
         }
       ]
     },
     options: {
       responsive: true,
       plugins: {
-        legend: { position: "top" },
-        tooltip: { mode: "index", intersect: false },
-        datalabels: {
-          display: true,
-          color: "#000",
-          anchor: "end",
-          align: "top",
-          font: { weight: "bold" }
-        }
+        legend: {
+          position: "top",
+          align: "center",
+          labels: {
+            padding: 25, // ✅ Separación moderada entre la leyenda y el gráfico
+            boxWidth: 20,
+            boxHeight: 12,
+            font: { size: 13 },
+            color: "#333"
+          }
+        },
+        tooltip: { mode: "index", intersect: false }
       },
       scales: {
         x: {

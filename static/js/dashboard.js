@@ -21,8 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
   loaderTabla.id = "loader-tabla";
   loaderTabla.innerHTML = `
     <div class="loader-content">
-      <div class="spinner-border text-success" role="status"></div>
-      <span class="ms-3 fw-semibold text-success">Cargando tabla... por favor espere!</span>
+        <div class="spinner-border text-info" role="status"></div>
+        <span class="ms-3 fw-semibold text-info">Cargando tabla... por favor espere!</span>
     </div>
   `;
   document.body.appendChild(loaderTabla);
@@ -171,20 +171,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
       dataTable.clear();
       dataTable.rows.add(
-        data.map(row => [
-          row.TICKET || "", row["FECHA DE REGISTRO"] || "", row.DOCUMENTO || "",
-          `<button class='btn btn-outline-info btn-sm ver-datos' data-info='${JSON.stringify(row)}'><i class='fa-solid fa-user'></i> Ver</button>`,
-          row["TIPO REQUERIMIENTO"] || "", row.REQUERIMIENTO || "",
-          `<i class='fa-solid fa-eye text-primary ver-descripcion' data-desc="${row.DESCRIPCION || ''}" style='cursor:pointer;'></i>`,
-          row["ENLACE DE RECURSOS"] ? `<span class='enlace-recurso text-primary' data-enlace='${row["ENLACE DE RECURSOS"]}' style='cursor:pointer;'><i class='fa-solid fa-link'></i> ${row["ENLACE DE RECURSOS"].slice(0, 25)}...</span>` : "",
-          row.DIRECCION || "", row.AREA || "", row.PROGRAMA || "", row.ESTADO || "",
-          `<i class='fa-solid fa-envelope text-success ver-respuesta' data-resp="${row.RESPUESTA || ''}" style='cursor:pointer;'></i>`,
-          row["FECHA DE DERIVACIÓN"] || "", row["HORA DE DERIVACIÓN"] || "", row["FECHA DE ATENCIÓN"] || "", row["HORA DE ATENCIÓN"] || "",
-          row["ÁREA TI"] || "", row["DNI_ESPECIALISTA FUNCIONAL"] || "", row["ESPECIALISTA FUNCIONAL TI"] || "",
-          row["NIVEL DE AVANCE"] || "", row["ESPECIALISTA APOYO TI"] || "", row["FECHA DE ASIGNACIÓN AL ESPECIALISTA FUNCIONAL TI"] || "",
-          row.PRIORIDAD || "", row["FECHA TENTATIVA REALIZACIÓN"] || "", row.PRODUCTO || "", row["TIPO TICKET"] || "",
-          row["FECHA_FINAL_ATENCION"] || ""
-        ])
+        data.map(row => {
+          const infoJSON = encodeURIComponent(JSON.stringify(row));
+          return [
+            row.TICKET || "",
+            row["FECHA DE REGISTRO"] || "",
+            row.DOCUMENTO || "",
+            `<button class='btn btn-outline-info btn-sm ver-datos' data-info="${infoJSON}" title="Ver datos personales">
+              <i class='fa-solid fa-user'></i> Ver
+            </button>`,
+            row["TIPO REQUERIMIENTO"] || "",
+            row.REQUERIMIENTO || "",
+            `<i class='fa-solid fa-eye text-primary ver-descripcion' data-desc="${row.DESCRIPCION || ''}" style='cursor:pointer;'></i>`,
+            row["ENLACE DE RECURSOS"]
+              ? `<span class='enlace-recurso text-primary' data-enlace='${row["ENLACE DE RECURSOS"]}' style='cursor:pointer;'>
+                  <i class='fa-solid fa-link'></i> ${row["ENLACE DE RECURSOS"].slice(0, 25)}...
+                </span>` : "",
+            row.DIRECCION || "",
+            row.AREA || "",
+            row.PROGRAMA || "",
+            row.ESTADO || "",
+            `<i class='fa-solid fa-envelope text-success ver-respuesta' data-resp="${row.RESPUESTA || ''}" style='cursor:pointer;'></i>`,
+            row["FECHA DE DERIVACIÓN"] || "",
+            row["HORA DE DERIVACIÓN"] || "",
+            row["FECHA DE ATENCIÓN"] || "",
+            row["HORA DE ATENCIÓN"] || "",
+            row["ÁREA TI"] || "",
+            row["DNI_ESPECIALISTA FUNCIONAL"] || "",
+            row["ESPECIALISTA FUNCIONAL TI"] || "",
+            row["NIVEL DE AVANCE"] || "",
+            row["ESPECIALISTA APOYO TI"] || "",
+            row["FECHA DE ASIGNACIÓN AL ESPECIALISTA FUNCIONAL TI"] || "",
+            row.PRIORIDAD || "",
+            row["FECHA TENTATIVA REALIZACIÓN"] || "",
+            row.PRODUCTO || "",
+            row["TIPO TICKET"] || "",
+            row["FECHA_FINAL_ATENCION"] || ""
+          ];
+        })
       ).draw();
     } catch (error) {
       console.error("Error cargando tabla:", error);
@@ -193,6 +217,41 @@ document.addEventListener("DOMContentLoaded", () => {
       ocultarLoaderTabla();
     }
   }
+  
+  // ============================
+  // 📌 EVENTOS DE MODALES Y ENLACES
+  // ============================
+  $(document).on("click", ".ver-descripcion", function () {
+    $("#descripcionContent").text($(this).data("desc") || "Sin descripción disponible.");
+    new bootstrap.Modal($("#modalDescripcion")).show();
+  });
+
+  $(document).on("click", ".ver-respuesta", function () {
+    $("#respuestaContent").text($(this).data("resp") || "Sin respuesta registrada.");
+    new bootstrap.Modal($("#modalRespuesta")).show();
+  });
+
+  $(document).on("click", ".ver-datos", function () {
+  const info = JSON.parse(decodeURIComponent(this.dataset.info));
+    $("#datosContent").html(`
+      <p><b>Nombre:</b> ${info["NOMBRES Y APELLIDOS"] || "-"}</p>
+      <p><b>Celular:</b> ${info.CELULAR || "-"}</p>
+      <p><b>Correo:</b> ${info.CORREO || "-"}</p>
+    `);
+    new bootstrap.Modal($("#modalDatos")).show();
+  });
+  $(document).on("click", ".enlace-recurso", async function () {
+    const enlace = $(this).data("enlace");
+    if (!enlace) return;
+    try {
+      await navigator.clipboard.writeText(enlace);
+      const original = $(this).html();
+      $(this).html("<i class='fa-solid fa-check text-success'></i> Copiado");
+      setTimeout(() => $(this).html(original), 1500);
+    } catch {
+      alert("No se pudo copiar el enlace.");
+    }
+  });
 
   // ============================================================
   // ⚙️ FUNCIONES AUXILIARES DE LOS LOADERS

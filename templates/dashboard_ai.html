@@ -28,11 +28,27 @@
       padding: 0 20px;
     }
 
+
     .kpi-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 20px;
-      margin-top: 25px;
+      height: 100%;
+    }
+
+    .chart-container {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+
+    @media (max-width: 991px) {
+      .row .col-lg-6 {
+        flex: 100%;
+        max-width: 100%;
+      }
     }
 
     .kpi-card {
@@ -53,14 +69,6 @@
       font-size: 1.6rem;
       font-weight: bold;
       margin-top: 8px;
-    }
-
-    .chart-container {
-      margin-top: 40px;
-      background: white;
-      border-radius: 12px;
-      padding: 25px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
     canvas {
@@ -151,32 +159,23 @@
     <h2 class="fw-bold">📊 Dashboard de Tickets con Análisis Inteligente</h2>
     <p class="text-muted">Monitoreo dinámico con soporte IA para análisis y respuestas automáticas.</p>
 
-    <!-- KPI CARDS -->
-    <div class="kpi-cards">
-      <div class="kpi-card">
-        <div class="text-primary"><i class="fa-solid fa-database"></i> Total Tickets</div>
-        <div class="kpi-value text-primary">{{ kpis.total_tickets }}</div>
+    <!-- === SECCIÓN KPIs + GRÁFICO === -->
+    <div class="row align-items-stretch mt-4">
+      <!-- KPIs Izquierda -->
+      <div class="col-lg-6 mb-4">
+        <div id="kpi-container" class="kpi-cards h-100"></div>
       </div>
-      <div class="kpi-card">
-        <div class="text-success"><i class="fa-solid fa-circle-check"></i> Cerrados</div>
-        <div class="kpi-value text-success">{{ kpis.cerrados }}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="text-warning"><i class="fa-solid fa-hourglass-half"></i> Pendientes</div>
-        <div class="kpi-value text-warning">{{ kpis.pendientes }}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="text-danger"><i class="fa-solid fa-bug"></i> Abiertos</div>
-        <div class="kpi-value text-danger">{{ kpis.abiertos }}</div>
+
+      <!-- Gráfico Derecha -->
+      <div class="col-lg-6 mb-4">
+        <div class="chart-container h-100 d-flex flex-column justify-content-center">
+          <h5 class="mb-3">
+            <i class="fa-solid fa-chart-pie text-primary"></i> Distribución de Tickets
+          </h5>
+          <canvas id="grafico"></canvas>
+        </div>
       </div>
     </div>
-
-    <!-- GRÁFICO -->
-    <div class="chart-container">
-      <h5 class="mb-3"><i class="fa-solid fa-chart-pie text-primary"></i> Distribución de Tickets</h5>
-      <canvas id="grafico"></canvas>
-    </div>
-
     <!-- SECCIÓN AI -->
     <div class="ai-section">
       <div class="ai-header"><i class="fa-solid fa-brain"></i> 💡 Sugerencia AI por Ticket</div>
@@ -201,71 +200,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
   <script>
     const kpis = {{ kpis | tojson }};
-
-    // === GRÁFICO ===
-    const ctx = document.getElementById('grafico').getContext('2d');
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Abiertos', 'Cerrados', 'Pendientes'],
-        datasets: [{
-          data: [kpis.abiertos, kpis.cerrados, kpis.pendientes],
-          backgroundColor: ['#e74c3c', '#2ecc71', '#f1c40f'],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { font: { size: 14 } }
-          }
-        }
-      }
-    });
-
-    // === IA - ANÁLISIS POR TICKET ===
-    document.getElementById('btnActualizar').addEventListener('click', async () => {
-      const ticketId = document.getElementById('ticketInput').value.trim();
-      const resultDiv = document.getElementById('aiResultado');
-
-      if (!ticketId) {
-        resultDiv.innerHTML = "<p class='text-danger'>❗ Ingrese un ID de ticket válido.</p>";
-        return;
-      }
-
-      resultDiv.innerHTML = "<p>⌛ Analizando con IA...</p>";
-
-      try {
-        const response = await fetch(`/api/ai-ticket/${ticketId}`);
-        const data = await response.json();
-
-        if (data.error) {
-          resultDiv.innerHTML = `<p class='text-danger'>${data.error}</p>`;
-          return;
-        }
-
-        resultDiv.innerHTML = `
-          <div class="fade-in">
-            <p><b>🎟 Ticket:</b> ${data.ticket}</p>
-            <p><b>📝 Descripción:</b> ${data.descripcion}</p>
-            <h5 class="mt-3">🧩 Clasificación AI</h5>
-            <ul>
-              <li><b>Tipo:</b> ${data.clasificacion.tipo_requerimiento}</li>
-              <li><b>Prioridad:</b> ${data.clasificacion.prioridad}</li>
-              <li><b>Área:</b> ${data.clasificacion.area_asignada}</li>
-              <li><b>Resumen:</b> ${data.clasificacion.resumen_corto}</li>
-            </ul>
-            <h5>✉️ Respuesta sugerida</h5>
-            <pre>${data.respuesta.respuesta_sugerida}</pre>
-          </div>
-        `;
-      } catch (error) {
-        resultDiv.innerHTML = `<p class='text-danger'>Error al conectar con el servidor.</p>`;
-        console.error(error);
-      }
-    });
   </script>
+  <!-- === Script principal === -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  <script src="{{ url_for('static', filename='js/dashboard_ai.js') }}"></script>
+
 </body>
 </html>

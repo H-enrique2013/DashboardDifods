@@ -73,7 +73,10 @@ def api_tickets_completo():
 @app.route('/dashboard-ai')
 def dashboard_ai():
     data = get_tickets_data()
-    kpis = compute_kpis(data)
+    kpis_raw = compute_kpis(data)  # Ejemplo: {'Cerrado': 2508, 'Atendido': 1306, ...}
+    kpis = {k.lower().replace(" ", "_"): v for k, v in kpis_raw.items()}
+    kpis = dict(kpis)  # <-- 🔹 fuerza a tipo dict
+    print(kpis)
     return render_template('dashboard_ai.html', kpis=kpis, data=data)
 
 
