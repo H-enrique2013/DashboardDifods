@@ -153,7 +153,6 @@
 
 </head>
 <body>
-
   <!-- ===== HEADER ===== -->
   <header class="d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center gap-3">
@@ -166,17 +165,14 @@
   <div class="dashboard-container">
     <h2>📊 Dashboard de Tickets – Vigilancia Tecnológica</h2>
     <p class="text-muted">Visualiza en segundos el estado general de tus casos registrados.</p>
-
     <!-- === DISTRIBUCIÓN EN DOS COLUMNAS (KPI + GRÁFICO) === -->
     <div class="row align-items-stretch gx-2 mt-3">
-      
       <!-- 🟦 Columna izquierda: KPI -->
       <div class="col-lg-7 col-md-12">
         <div class="panel-equal h-100 p-3 bg-white rounded shadow-sm">
           <h5 class="mb-3 text-primary">
             <i class="fa-solid fa-gauge-high me-1"></i> Indicadores Clave (KPI)
           </h5>
-
           <div class="kpi-cards">
             <!-- Total tickets -->
             <div class="kpi-card" style="border-top: 5px solid #007bff;">
@@ -185,31 +181,31 @@
               </div>
               <div class="kpi-value text-primary">{{ kpis.total_tickets }}</div>
             </div>
-
             <!-- Estados dinámicos -->
             {% for estado, cantidad in kpis.items() %}
               {% if estado != "total_tickets" and estado != "error" %}
-                {% set estado_lower = estado|lower %}
-                {% if 'cerrado' in estado_lower %}
+                {% set estado_formateado = estado.replace('_', ' ') %}
+                {% set color = '#0d6efd' %}
+                {% set icon = 'fa-circle-info' %}
+                {% if 'cerrado' in estado_formateado %}
                   {% set color = '#28a745' %}{% set icon = 'fa-circle-check' %}
-                {% elif 'abierto' in estado_lower %}
+                {% elif 'abierto' in estado_formateado %}
                   {% set color = '#dc3545' %}{% set icon = 'fa-bug' %}
-                {% elif 'pendiente' in estado_lower %}
+                {% elif 'pendiente' in estado_formateado %}
                   {% set color = '#ffc107' %}{% set icon = 'fa-hourglass-half' %}
-                {% elif 'rechazado' in estado_lower %}
+                {% elif 'rechazado' in estado_formateado %}
                   {% set color = '#6c757d' %}{% set icon = 'fa-circle-xmark' %}
-                {% elif 'asignado' in estado_lower %}
+                {% elif 'asignado' in estado_formateado %}
                   {% set color = '#17a2b8' %}{% set icon = 'fa-user-check' %}
-                {% elif 'atendido' in estado_lower %}
+                {% elif 'atendido' in estado_formateado %}
                   {% set color = '#6610f2' %}{% set icon = 'fa-headset' %}
-                {% elif 'proceso' in estado_lower %}
+                {% elif 'en_proceso' in estado_formateado %}
                   {% set color = '#20c997' %}{% set icon = 'fa-gear' %}
-                {% else %}
-                  {% set color = '#0d6efd' %}{% set icon = 'fa-circle-info' %}
                 {% endif %}
-                <div class="kpi-card" style="border-top: 5px solid {{ color }};">
-                  <div class="fw-semibold" style="color: {{ color }};">
-                    <i class="fa-solid {{ icon }} me-1"></i> {{ estado }}
+                <div class="kpi-card shadow-sm" style="border-top: 5px solid {{ color }};">
+                  <div class="fw-semibold mb-1" style="color: {{ color }};">
+                    <i class="fa-solid {{ icon }} me-1"></i>
+                    {{ estado_formateado|title }}
                   </div>
                   <div class="kpi-value" style="color: {{ color }};">{{ cantidad }}</div>
                 </div>
@@ -218,7 +214,6 @@
           </div>
         </div>
       </div>
-
       <!-- 🟨 Columna derecha: Gráfico -->
       <div class="col-lg-5 col-md-12">
         <div class="panel-equal h-100 p-3 bg-white rounded shadow-sm d-flex flex-column justify-content-center align-items-center">
@@ -342,8 +337,8 @@
   <!-- === Inyectar los KPIs desde Flask === -->
   <script>
     const kpis = {{ kpis | tojson }};
+    console.log("📦 KPIs en HTML:", {{ kpis | tojson | safe }});
   </script>
-
   <!-- === Script principal === -->
   <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>

@@ -19,9 +19,19 @@ def home():
 # ============================================================
 @app.route('/dashboard')
 def dashboard():
-    data = get_tickets_data()
-    kpis = compute_kpis(data)
+    # === 1️⃣ Obtener los datos crudos ===
+    data = get_tickets_data()  # Retorna lista o DataFrame con tus registros
+
+    # === 2️⃣ Calcular los KPI ===
+    kpis_raw = compute_kpis(data)  # Ejemplo: {'Cerrado': 2508, 'Atendido': 1306, ...}
+
+    # === 3️⃣ Normalizar las claves ===
+    # Convierte todo a minúsculas y reemplaza espacios por guiones bajos
+    kpis = {k.lower().replace(" ", "_"): v for k, v in kpis_raw.items()}
+    kpis = dict(kpis)  # <-- 🔹 fuerza a tipo dict
+    # === 5️⃣ Enviar al frontend ===
     return render_template('dashboard.html', kpis=kpis)
+
 
 # ============================================================
 # DASHBOARD PRINCIPAL DE ESPECIALISTAS

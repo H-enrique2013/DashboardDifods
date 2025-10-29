@@ -48,21 +48,22 @@
     .card-options-container {
       flex: 1;
       display: flex;
-      align-items: center;          /* Centra verticalmente */
-      justify-content: center;      /* Centra horizontalmente */
+      justify-content: center;
+      align-items: flex-start;
       padding: 40px 20px;
     }
 
+    /* Layout vertical: una sola columna centrada */
     .card-grid {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: stretch;
+      flex-direction: column;
+      align-items: center;
       gap: 25px;
-      max-width: 1100px;
       width: 100%;
+      max-width: 500px; /* ancho ideal para una columna */
     }
 
+    /* Diseño individual de cada tarjeta */
     .option-card {
       display: flex;
       align-items: center;
@@ -74,19 +75,18 @@
       text-decoration: none;
       color: inherit;
       transition: all 0.3s ease-in-out;
-      flex: 1 1 45%;
-      min-width: 340px;
-      max-width: 500px;
+      width: 100%;
       min-height: 120px;
       border-left: 6px solid transparent;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
     }
 
     .option-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
     }
 
-    /* === Icono circular === */
+    /* Icono circular */
     .icon-circle {
       display: flex;
       align-items: center;
@@ -99,12 +99,13 @@
       transition: 0.3s;
     }
 
-    /* === Hover con cambio de color === */
+    /* Hover dinámico */
     .option-card:hover .icon-circle.bg-primary { background-color: #0d6efd; color: white; }
     .option-card:hover .icon-circle.bg-success { background-color: #198754; color: white; }
     .option-card:hover .icon-circle.bg-warning { background-color: #ffc107; color: white; }
     .option-card:hover .icon-circle.bg-dark { background-color: #212529; color: white; }
 
+    /* Textos */
     .option-card h6 {
       font-size: 1.05rem;
       font-weight: 600;
@@ -116,6 +117,7 @@
       color: #6c757d;
       margin: 0;
     }
+
 
     /* === Footer === */
     footer {
@@ -136,22 +138,19 @@
       text-decoration: underline;
     }
 
-    /* === Responsive === */
-    @media (max-width: 768px) {
+    @media (max-width: 576px) {
+      .card-grid {
+        max-width: 100%;
+        padding: 0 10px;
+      }
+
       .option-card {
         flex-direction: column;
         align-items: center;
         text-align: center;
-        min-height: 140px;
-        padding: 20px;
-      }
-
-      .icon-circle {
-        width: 55px;
-        height: 55px;
-        font-size: 1.5rem;
       }
     }
+
   </style>
 </head>
 

@@ -137,53 +137,64 @@
       margin-top: 4px;
     }
 
-    /* === Estilo profesional de tabla === */
-    .table {
-      border-collapse: separate;
-      border-spacing: 0;
+    /* === TABLA DE RESUMEN: estilo profesional y alineado === */
+    #tablaEspecialistas {
       width: 100%;
-      background: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      border-collapse: collapse;
+      font-size: 14px;
     }
 
-    .table thead th {
-      background: linear-gradient(135deg, #e3f2fd, #f8f9fa);
-      color: #2c3e50;
-      font-weight: 600;
+    #tablaEspecialistas thead th {
+      background-color: #f8fafc;
+      color: #1f2937;
+      font-weight: 700;
+      text-transform: uppercase;
       text-align: center;
-      vertical-align: middle;
+      padding: 10px;
       border-bottom: 2px solid #dee2e6;
     }
 
-    .table tbody tr:nth-child(odd) {
-      background-color: #f9fbfc;
-    }
-
-    .table tbody td, .table tfoot th {
+    #tablaEspecialistas tbody td,
+    #tablaEspecialistas tbody th {
+      padding: 10px;
       text-align: center;
+      border-bottom: 1px solid #e9ecef;
       vertical-align: middle;
-      padding: 10px 8px;
     }
 
-    .table td:first-child, .table th:first-child {
+    #tablaEspecialistas tbody tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    #tablaEspecialistas tbody tr:hover {
+      background-color: #f1f5f9;
+    }
+
+    /* Columna del especialista alineada a la izquierda */
+    #tablaEspecialistas tbody td:first-child,
+    #tablaEspecialistas thead th:first-child {
       text-align: left;
+      padding-left: 18px;
     }
 
-    .table tfoot {
+    /* === FILA TOTAL FINAL === */
+    #tablaEspecialistas tfoot tr {
       background-color: #f1f3f5;
-      font-weight: bold;
+      font-weight: 700;
+      color: #111827;
     }
 
-    .table tfoot th {
-      color: #2c3e50;
+    #tablaEspecialistas tfoot th {
+      padding: 10px;
+      text-align: center;
+      border-top: 2px solid #cbd5e1;
     }
 
-    .table .text-info { color: #17a2b8 !important; }
-    .table .text-warning { color: #ff9800 !important; }
-    .table .text-danger { color: #e53935 !important; }
-    .table .text-primary { color: #007bff !important; }
+    #tablaEspecialistas tfoot th:first-child {
+      text-align: left;
+      padding-left: 18px;
+    }
+
 
     #fechaInicio, #fechaFin {
       display: none;
@@ -259,21 +270,21 @@
       </div>
     </div>
 
-
-
     <!-- ======= TABLA RESUMEN ======= -->
     <div class="table-responsive shadow-sm bg-white p-3 rounded mt-4">
-      <table id="tablaEspecialistas" class="table table-striped align-middle w-100">
-        <thead class="table-dark">
+      <table id="tablaEspecialistas" class="table align-middle mb-0">
+        <thead>
           <tr>
             <th>ESPECIALISTA FUNCIONAL TI</th>
-            <th class="text-info">ASIGNADO</th>
+            <th class="text-primary">ASIGNADO</th>
             <th class="text-warning">EN PROCESO</th>
             <th class="text-danger">PENDIENTE</th>
             <th class="text-primary">TOTAL DE REQUERIMIENTOS</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody>
+          <!-- filas dinámicas -->
+        </tbody>
       </table>
     </div>
     <br>
