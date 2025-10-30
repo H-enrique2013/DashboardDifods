@@ -28,7 +28,7 @@
       padding: 0 20px;
     }
 
-
+    /* === KPI y Gráfico === */
     .kpi-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -76,6 +76,7 @@
       height: 280px !important;
     }
 
+    /* === Sección IA === */
     .ai-section {
       background: #ffffff;
       border-radius: 12px;
@@ -94,9 +95,7 @@
       gap: 8px;
     }
 
-    .ai-header i {
-      color: #17a2b8;
-    }
+    .ai-header i { color: #17a2b8; }
 
     input {
       padding: 7px 10px;
@@ -126,13 +125,34 @@
       font-size: 0.95rem;
     }
 
-    .fade-in {
-      animation: fadeIn 0.4s ease-in;
-    }
+    .fade-in { animation: fadeIn 0.4s ease-in; }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(5px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === Loader global === */
+    #loader-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 0.6s ease;
+    }
+    #loader-overlay.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .loader-content {
+      display: flex;
+      align-items: center;
+      font-size: 1.3rem;
     }
 
     footer {
@@ -144,8 +164,8 @@
     }
   </style>
 </head>
-<body>
 
+<body>
   <!-- ===== HEADER ===== -->
   <header class="d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center gap-3">
@@ -176,16 +196,18 @@
         </div>
       </div>
     </div>
-    <!-- SECCIÓN AI -->
+
+    <!-- === SECCIÓN IA === -->
     <div class="ai-section">
       <div class="ai-header"><i class="fa-solid fa-brain"></i> 💡 Sugerencia AI por Ticket</div>
-      <p class="text-muted mb-3">Ingresa un ID de ticket para obtener clasificación y respuesta sugerida automática.</p>
+      <p class="text-muted mb-3">Ingresa un ID de ticket para obtener clasificación, especialista asignado, TDR y respuesta IA.</p>
 
-      <div class="mb-3">
-        <input type="text" id="ticketInput" placeholder="Ejemplo: TCK-101">
+      <div class="mb-3 d-flex align-items-center gap-2">
+        <input type="text" id="ticketInput" placeholder="Ejemplo: TK-1024">
         <button id="btnActualizar">🔁 Analizar con IA</button>
       </div>
 
+      <!-- Resultado dinámico -->
       <div id="aiResultado" class="fade-in">
         <em>Ingrese un ID de ticket y presione “Analizar con IA”.</em>
       </div>
@@ -198,13 +220,11 @@
 
   <!-- ===== SCRIPTS ===== -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <script>
     const kpis = {{ kpis | tojson }};
   </script>
-  <!-- === Script principal === -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <script src="{{ url_for('static', filename='js/dashboard_ai.js') }}"></script>
-
 </body>
 </html>

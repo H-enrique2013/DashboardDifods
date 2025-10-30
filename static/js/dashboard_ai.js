@@ -158,8 +158,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+
   btnAnalizar.addEventListener("click", async () => {
     const ticketId = document.getElementById("ticketInput").value.trim();
+    const resultDiv = document.getElementById("aiResultado");
 
     if (!ticketId) {
       resultDiv.innerHTML = "<p class='text-danger'>❗ Ingrese un ID de ticket válido.</p>";
@@ -169,7 +171,13 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarLoaderAI();
 
     try {
-      const response = await fetch(`/api/ai-ticket/${ticketId}`);
+      // 🔹 Nueva versión: método POST con JSON
+      const response = await fetch("/api/ai-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticket_id: ticketId })
+      });
+
       const data = await response.json();
 
       if (data.error) {
@@ -177,24 +185,81 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // 🔹 Renderizado profesional del resultado
       resultDiv.innerHTML = `
         <div class="fade-in">
-          <p><b>🎟 Ticket:</b> ${data.ticket}</p>
-          <p><b>📝 Descripción:</b> ${data.descripcion}</p>
-          <h5 class="mt-3">🧩 Clasificación AI</h5>
-          <ul>
-            <li><b>Tipo:</b> ${data.clasificacion.tipo_requerimiento}</li>
-            <li><b>Prioridad:</b> ${data.clasificacion.prioridad}</li>
-            <li><b>Área:</b> ${data.clasificacion.area_asignada}</li>
-            <li><b>Resumen:</b> ${data.clasificacion.resumen_corto}</li>
-          </ul>
-          <h5>✉️ Respuesta sugerida</h5>
-          <pre>${data.respuesta.respuesta_sugerida}</pre>
+          <h5 class="fw-bold text-primary mb-2">🎟 Ticket Analizado: ${data.ticket}</h5>
+          <p><b>📝 Descripción:</b> ${data.descripcion || "Sin descripción disponible"}</p>
+          
+          <hr>
+
+          <h5 class="text-success mt-3"><i class="fa-solid fa-brain"></i> Clasificación IA</h5>
+          <div class="ms-3">
+            <p><b>Tipo:</b> ${data.clasificacion?.tipo_requerimiento || "-"}</p>
+            <p><b>Requerimiento:</b> ${data.clasificacion?.requerimiento || "-"}</p>
+            <p><b>Área Asignada:</b> ${data.clasificacion?.area_asignada || "-"}</p>
+            <p><b>Prioridad:</b> ${data.clasificacion?.prioridad || "-"}</p>
+            <p><b>Resumen:</b> ${data.clasificacion?.resumen_corto || "-"}</p>
+          </div>
+
+          <hr>
+
+          <h5 class="text-info mt-3"><i class="fa-solid fa-user-tie"></i> Especialista Asignado</h5>
+          ${
+            data.especialista && data.especialista !== "No encontrado"
+              ? `
+              <div class="ms-3">
+                <p><b>👤 Encargado:</b> ${data.especialista.encargado || "-"}</p>
+                <p><b>🪪 DNI Coordinador:</b> ${data.especialista.dni_coordinador || "-"}</p>
+                <p><b>💼 Rol del Proceso:</b> ${data.especialista.rol_proceso || "-"}</p>
+                <p><b>🏢 Equipo:</b> ${data.especialista.equipo || "-"}</p>
+              </div>
+            `
+              : "<p class='text-muted ms-3'>No se encontró especialista asignado.</p>"
+          }
+
+          <hr>
+
+          <h5 class="text-warning mt-3"><i class="fa-solid fa-file-lines"></i> TDR Asociados</h5>
+          ${
+            Array.isArray(data.tdr) && data.tdr.length > 0
+              ? `
+              <div class="table-responsive ms-2">
+                <table class="table table-sm table-striped align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Actividad</th>
+                      <th>Producto</th>
+                      <th>Entregable</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.tdr
+                      .map(
+                        tdr => `
+                        <tr>
+                          <td>${tdr.ACTIVIDAD || "-"}</td>
+                          <td>${tdr.PRODUCTO || "-"}</td>
+                          <td>${tdr.ENTREGABLE || "-"}</td>
+                        </tr>
+                      `
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>`
+              : "<p class='text-muted ms-3'>No se encontraron TDR para este especialista.</p>"
+          }
+
+          <hr>
+
+          <h5 class="text-primary mt-3"><i class="fa-solid fa-envelope-open-text"></i> Respuesta Sugerida</h5>
+          <pre class="p-3 bg-light border rounded">${data.respuesta?.respuesta_sugerida || "No se generó respuesta."}</pre>
         </div>
       `;
     } catch (error) {
-      resultDiv.innerHTML = `<p class='text-danger'>Error al conectar con el servidor.</p>`;
       console.error("❌ Error IA:", error);
+      resultDiv.innerHTML = `<p class='text-danger'>Error al conectar con el servidor.</p>`;
     } finally {
       ocultarLoaderAI();
     }

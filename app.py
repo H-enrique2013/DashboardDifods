@@ -2,7 +2,8 @@ from flask import Flask, jsonify, render_template, request
 from services.google_sheets_service import get_tickets_data
 from services.etl_service import compute_kpis
 from services.model_predict_service import predict_sla_risk
-from services.openai_service import clasificar_ticket, generar_respuesta
+from services.openai_service import clasificar_ticket,analizar_ticket_completo
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -46,7 +47,6 @@ def dashboard_especialistas():
 @app.route("/api/tickets-completo")
 def api_tickets_completo():
     data = get_tickets_data()
-    import pandas as pd
     df = pd.DataFrame(data)
 
     # Normalización básica
@@ -109,31 +109,86 @@ def api_ai_clasificar():
     return jsonify(resultado)
 
 
-@app.route('/api/ai-respuesta', methods=['POST'])
-def api_ai_respuesta():
-    data = request.get_json()
-    resultado = generar_respuesta(data)
-    return jsonify(resultado)
-
 
 @app.route('/api/ai-ticket/<ticket_id>', methods=['GET'])
 def api_ai_ticket(ticket_id):
-    data = get_tickets_data()
-    ticket = next((t for t in data if str(t.get("TICKET", "")) == str(ticket_id)), None)
+    try:
+        # 1️⃣ Obtener todos los tickets del sistema
+        data = get_tickets_data()
+        ticket = next((t for t in data if str(t.get("TICKET", "")) == str(ticket_id)), None)
 
-    if not ticket:
-        return jsonify({"error": f"No se encontró el ticket {ticket_id}"}), 404
+        if not ticket:
+            return jsonify({"error": f"No se encontró el ticket {ticket_id}"}), 404
 
-    descripcion = ticket.get("DESCRIPCION", "")
-    clasificacion = clasificar_ticket(descripcion)
-    respuesta = generar_respuesta(ticket)
+        descripcion = ticket.get("DESCRIPCION", "")
+        if not descripcion:
+            return jsonify({"error": "El ticket no contiene descripción."}), 400
 
-    return jsonify({
-        "ticket": ticket.get("TICKET"),
-        "descripcion": descripcion,
-        "clasificacion": clasificacion,
-        "respuesta": respuesta
-    })
+  
+
+        # 3️⃣ Analizar el ticket (IA + asignación + TDR + respuesta)
+        resultado = analizar_ticket_completo(
+            descripcion_ticket=descripcion,
+            datos_usuario=ticket
+        )
+
+        # 4️⃣ Retornar el JSON unificado al dashboard
+        return jsonify({
+            "ticket": ticket.get("TICKET"),
+            "descripcion": descripcion,
+            "clasificacion": resultado.get("clasificacion"),
+            "especialista": resultado.get("especialista"),
+            "tdr": resultado.get("tdr"),
+            "respuesta": resultado.get("respuesta")
+        })
+
+    except Exception as e:
+        print(f"❌ Error en api_ai_ticket: {e}")
+        return jsonify({"error": "Ocurrió un error interno en el servidor."}), 500
+    
+
+@app.route('/api/ai-ticket', methods=['POST'])
+def api_ai_ticket_post():
+    try:
+        # 1️⃣ Recibir el cuerpo del request
+        data = request.get_json()
+        ticket_id = data.get("ticket_id")
+
+        if not ticket_id:
+            return jsonify({"error": "Falta el campo 'ticket_id' en el cuerpo del request."}), 400
+
+        # 2️⃣ Buscar el ticket en la hoja de datos
+        tickets = get_tickets_data()
+        ticket = next((t for t in tickets if str(t.get("TICKET", "")) == str(ticket_id)), None)
+
+        if not ticket:
+            return jsonify({"error": f"No se encontró el ticket {ticket_id}"}), 404
+
+        descripcion = ticket.get("DESCRIPCION", "")
+        if not descripcion:
+            return jsonify({"error": "El ticket no contiene descripción."}), 400
+
+        # 3️⃣ Ejecutar el análisis IA completo
+        resultado = analizar_ticket_completo(
+            descripcion_ticket=descripcion,
+            datos_usuario=ticket
+        )
+
+        # 4️⃣ Retornar el JSON unificado
+        return jsonify({
+            "ticket": ticket.get("TICKET"),
+            "descripcion": descripcion,
+            "clasificacion": resultado.get("clasificacion"),
+            "especialista": resultado.get("especialista"),
+            "tdr": resultado.get("tdr"),
+            "respuesta": resultado.get("respuesta")
+        })
+
+    except Exception as e:
+        print(f"❌ Error en api_ai_ticket_post: {e}")
+        return jsonify({"error": "Ocurrió un error interno en el servidor."}), 500
+
+
 
 @app.route('/api/tickets')
 def api_tickets():
