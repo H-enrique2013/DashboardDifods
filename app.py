@@ -113,7 +113,7 @@ def api_ai_clasificar():
 @app.route('/api/ai-ticket/<ticket_id>', methods=['GET'])
 def api_ai_ticket(ticket_id):
     try:
-        # 1️⃣ Obtener todos los tickets del sistema
+        # Obtener todos los tickets del sistema
         data = get_tickets_data()
         ticket = next((t for t in data if str(t.get("TICKET", "")) == str(ticket_id)), None)
 
@@ -126,13 +126,17 @@ def api_ai_ticket(ticket_id):
 
   
 
-        # 3️⃣ Analizar el ticket (IA + asignación + TDR + respuesta)
+        # Analizar el ticket (IA + asignación + TDR + respuesta)
         resultado = analizar_ticket_completo(
             descripcion_ticket=descripcion,
             datos_usuario=ticket
         )
 
-        # 4️⃣ Retornar el JSON unificado al dashboard
+        print("===== 🧠 RESULTADO COMPLETO DEL ANÁLISIS =====")
+        print(resultado)
+        print("=============================================")
+
+        # Retornar el JSON unificado al dashboard
         return jsonify({
             "ticket": ticket.get("TICKET"),
             "descripcion": descripcion,
@@ -167,13 +171,15 @@ def api_ai_ticket_post():
         descripcion = ticket.get("DESCRIPCION", "")
         if not descripcion:
             return jsonify({"error": "El ticket no contiene descripción."}), 400
+        
+        print("🟢 Analizando ticket:", ticket_id)
 
         # 3️⃣ Ejecutar el análisis IA completo
         resultado = analizar_ticket_completo(
             descripcion_ticket=descripcion,
             datos_usuario=ticket
         )
-
+        print("🟢 Resultado :", resultado)
         # 4️⃣ Retornar el JSON unificado
         return jsonify({
             "ticket": ticket.get("TICKET"),
@@ -187,7 +193,6 @@ def api_ai_ticket_post():
     except Exception as e:
         print(f"❌ Error en api_ai_ticket_post: {e}")
         return jsonify({"error": "Ocurrió un error interno en el servidor."}), 500
-
 
 
 @app.route('/api/tickets')

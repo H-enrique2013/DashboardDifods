@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import json
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -15,7 +16,7 @@ SHEET_URL_TDR = os.getenv("SHEET_URL_TDR")  # ❌ sin espacio al final
 
 
 # =====================================
-# 🔹 CLASIFICACIÓN AUTOMÁTICA DE TICKETS
+# CLASIFICACIÓN AUTOMÁTICA DE TICKETS
 # =====================================
 def clasificar_ticket(descripcion_ticket: str):
     """
@@ -23,18 +24,15 @@ def clasificar_ticket(descripcion_ticket: str):
     Para tipo_requerimiento y requerimiento: debe elegir solo de las listas de la hoja.
     Para área_asignada y prioridad: puede inferir libremente o usar las opciones predefinidas.
     """
+    import json
+
     if not descripcion_ticket or descripcion_ticket.strip() == "":
         return {"error": "Descripción vacía"}
 
-    # === Validar URL y convertir si no es CSV ===
-    sheet_url = SHEET_URL_ASIGNACION.strip()
-    if "export?format=csv" not in sheet_url:
-        sheet_url = sheet_url.replace("/edit#gid=", "/export?format=csv&gid=")
-
-    # === Leer hoja de asignaciones ===
     try:
+        # === Leer hoja de asignaciones ===
         df_asignacion = pd.read_csv(
-            sheet_url,
+            SHEET_URL_ASIGNACION,
             dtype={
                 "DNI_ENCARGO_PROCESO": str,
                 "DNI_COORDINADOR_PROCESO": str
@@ -42,63 +40,84 @@ def clasificar_ticket(descripcion_ticket: str):
             on_bad_lines='skip',
             engine='python'
         ).fillna("")
-    except Exception as e:
-        print("❌ Error al leer Google Sheet:", e)
-        return {"error": f"No se pudo leer la hoja de asignación: {e}"}
 
-    # === Generar listas únicas ===
-    try:
+        # === Generar lista global de tipos ===
         tipos = sorted(df_asignacion["CATEGORIA_REQUERIMIENTO"].dropna().unique().tolist())
-        requerimientos = sorted(df_asignacion["REQUERIMIENTO"].dropna().unique().tolist())
-        areas = sorted(df_asignacion["EQUIPO"].dropna().unique().tolist())
-    except KeyError as e:
-        print("❌ Error: faltan columnas en la hoja:", e)
-        return {"error": f"Faltan columnas esperadas en la hoja: {e}"}
+        lista_tipos = ", ".join(tipos)
 
-    # === Convertir listas a string limpio ===
-    lista_tipos = ", ".join(tipos)
-    lista_requerimientos = ", ".join(requerimientos)
-    lista_areas = ", ".join(areas)
+    except Exception as e:
+        print(f"❌ Error cargando hoja de asignaciones: {e}")
+        return {"error": f"No se pudo leer la hoja de asignaciones: {e}"}
 
-    # === Log de depuración ===
-    print("📄 Tipos detectados:", len(tipos))
-    print("📄 Requerimientos detectados:", len(requerimientos))
-    print("📄 Áreas detectadas:", len(areas))
-
-    # === Prompt específico y controlado ===
-    prompt = f"""
-    Eres un analista de soporte técnico y automatización en una plataforma educativa del MINEDU (SIFODS).
-    Analiza el siguiente texto y devuelve ÚNICAMENTE un JSON con las siguientes claves exactas:
-
+    # === Prompt inicial para determinar tipo principal ===
+    prompt_tipo = f"""
+    Eres un analista de soporte técnico y automatización del MINEDU (SIFODS).
+    Clasifica el siguiente ticket y devuelve SOLO el tipo de requerimiento en formato JSON:
     {{
-      "tipo_requerimiento": "Debe elegir exactamente uno de esta lista: {lista_tipos}",
-      "requerimiento": "Debe elegir exactamente uno de esta lista: {lista_requerimientos}",
-      "prioridad": "Alta, Media o Baja (elige según el contexto del texto)",
-      "area_asignada": "Puede inferir el área más adecuada o elegir una existente entre: {lista_areas} o considerar 'Automatización', 'Aulas Virtuales', 'Reportes', 'Plataforma'",
-      "resumen_corto": "Máximo 20 palabras, resumen claro del ticket"
+      "tipo_requerimiento": "uno de los siguientes: {lista_tipos}"
     }}
-
-    Si no existe coincidencia exacta en las listas dadas, elige el valor más cercano semánticamente 
-    y no inventes nuevos nombres.
 
     Texto del ticket:
     \"\"\"{descripcion_ticket}\"\"\"
     """
 
     try:
-        response = client.responses.create(
-            model="gpt-4o-mini",
-            input=prompt,
-            response_format={"type": "json_object"}
-        )
+        resp_tipo = client.responses.create(model="gpt-4o-mini", input=prompt_tipo)
+        tipo_result = resp_tipo.output_text.strip().replace("```json", "").replace("```", "").strip()
+        tipo_data = json.loads(tipo_result)
+        tipo_requerimiento = tipo_data.get("tipo_requerimiento", "")
+    except Exception as e:
+        print("⚠️ No se pudo determinar tipo_requerimiento:", e)
+        tipo_requerimiento = ""
 
-        result = response.output_parsed or {}
+    # === Filtrar requerimientos asociados a ese tipo ===
+    lista_requerimientos = []
+    if tipo_requerimiento:
+        lista_requerimientos = df_asignacion.loc[
+            df_asignacion["CATEGORIA_REQUERIMIENTO"].str.strip().str.upper() == tipo_requerimiento.strip().upper(),
+            "REQUERIMIENTO"
+        ].dropna().unique().tolist()
+
+    lista_requerimientos_texto = ", ".join(lista_requerimientos) if lista_requerimientos else "N/A"
+
+    # === Prompt completo final ===
+    prompt = f"""
+    Responde SOLO en formato JSON válido y sin texto adicional.
+
+    Eres un analista de soporte técnico y automatización del MINEDU (SIFODS).
+    Clasifica el siguiente ticket de soporte según su descripción.
+
+    Reglas:
+    - "tipo_requerimiento": uno de los siguientes → {lista_tipos}
+    - "requerimiento": debe elegirse entre → {lista_requerimientos_texto}
+    - "prioridad": elige entre Alta, Media o Baja según el contexto.
+    - "area_asignada": puede inferirse o elegirse entre las que correspondan a ese tipo y requerimiento.
+    - "resumen_corto": máximo 20 palabras, resumen claro.
+
+    Texto del ticket:
+    \"\"\"{descripcion_ticket}\"\"\"
+    """
+
+    try:
+        response = client.responses.create(model="gpt-4o-mini", input=prompt)
+        texto = response.output_text.strip()
+        print("🧠 Texto IA crudo:", texto)
+
+        texto_limpio = texto.replace("```json", "").replace("```", "").strip()
+
+        try:
+            result = json.loads(texto_limpio)
+        except json.JSONDecodeError as err:
+            print("⚠️ No se pudo parsear el JSON:", err)
+            result = {"raw_text": texto_limpio}
+
         print("✅ Clasificación IA:", result)
         return result
 
     except Exception as e:
         print("❌ Error en clasificar_ticket:", e)
         return {"error": str(e)}
+
 
 
 
@@ -132,9 +151,10 @@ def obtener_especialista(tipo, requerimiento, area,df_asignacion):
         return None
 
     return {
-        "dni_coordinador": str(fila.get("DNI_COORDINADOR_PROCESO", "")),
+        "dni_encargado_proceso": str(fila.get("DNI_ENCARGO_PROCESO", "")),
         "encargado": fila.get("Encargado del proceso", ""),
         "rol_proceso": fila.get("Rol del proceso", ""),
+        "dni_coordinador": str(fila.get("DNI_COORDINADOR_PROCESO", "")),
         "equipo": fila.get("EQUIPO", ""),
         "categoria_requerimiento": fila.get("CATEGORIA_REQUERIMIENTO", ""),
         "requerimiento": fila.get("REQUERIMIENTO", "")
@@ -143,20 +163,13 @@ def obtener_especialista(tipo, requerimiento, area,df_asignacion):
 # =====================================
 # 🔹 BÚSQUEDA DE TDR POR DNI
 # =====================================
-def obtener_tdr_por_dni(dni):
+def obtener_tdr_por_dni(dni,df_tdr):
     """
     Devuelve todos los TDR (actividades, productos, entregables) de un especialista.
     """
     if not dni:
         return []
     
-    df_tdr = pd.read_csv(
-        SHEET_URL_TDR, 
-        dtype={"DNI": str},
-        on_bad_lines='skip',
-        engine='python'
-        )
-
     df = df_tdr.fillna("").copy()
     registros = df[df["DNI"].astype(str) == str(dni)]
     if registros.empty:
@@ -225,7 +238,7 @@ def analizar_ticket_completo(descripcion_ticket, datos_usuario=None):
     area = clasificacion.get("area_asignada", "")
 
     especialista = obtener_especialista(tipo, req, area, df_asignacion)
-    dni = especialista["dni_coordinador"] if especialista else None
+    dni = especialista["dni_encargado_proceso"] if especialista else None
     tdr = obtener_tdr_por_dni(dni, df_tdr) if dni else []
 
     # Preparar información para respuesta
@@ -238,10 +251,7 @@ def analizar_ticket_completo(descripcion_ticket, datos_usuario=None):
     }
 
     respuesta = generar_respuesta(ticket_info)
-    #print("Respuesta :",respuesta)
-    #print("Especialista :",especialista)
-    #print("Clasificacion :",clasificacion)
-    #print("Tdr :",tdr)
+
     return {
         "clasificacion": clasificacion,
         "especialista": especialista or "No encontrado",
@@ -254,7 +264,6 @@ def analizar_ticket_completo(descripcion_ticket, datos_usuario=None):
 # =====================================
 if __name__ == "__main__":
     descripcion = "No puedo crear un aula virtual nueva, el sistema muestra error al guardar."
-    datos_usuario = {"NOMBRES Y APELLIDOS": "Carlos Ramos", "TICKET": "TK-1024"}
-
+    datos_usuario = {"NOMBRES Y APELLIDOS": "Carlos Ramos", "TICKET": "4"}
     resultado = analizar_ticket_completo(descripcion, datos_usuario)
     print(resultado)

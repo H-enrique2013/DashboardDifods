@@ -179,6 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await response.json();
+      console.log("Analisis AI:", data);
 
       if (data.error) {
         resultDiv.innerHTML = `<p class='text-danger'>${data.error}</p>`;
