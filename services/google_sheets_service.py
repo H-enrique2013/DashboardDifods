@@ -26,4 +26,4 @@ def get_tickets_data():
 
     except Exception as e:
         return {"error": f"No se pudo leer la hoja: {e}"}
-
+    

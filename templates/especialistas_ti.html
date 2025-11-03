@@ -4,13 +4,12 @@
   <meta charset="UTF-8">
   <title>📋 Dashboard Especialistas TI</title>
 
-  <!-- Bootstrap, FontAwesome, Chart.js y DataTables -->
+  <!-- Bootstrap, FontAwesome, DataTables y Choices.js -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-  <!-- Select2 -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+
   <style>
     body {
       background-color: #f8f9fa;
@@ -58,14 +57,30 @@
       background: white;
       border-radius: 12px;
       padding: 25px;
-      box-shadow: 0 3px 10px rgba(8, 228, 162, 0.05);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
       margin-bottom: 35px;
     }
 
-    select.form-select[multiple] {
-      height: 110px;
+    .choices__inner {
+      background: #fff !important;
+      border-radius: 10px !important;
+      border: 1px solid #ccc !important;
+      min-height: 44px !important;
+      padding: 4px 10px !important;
+      font-size: 0.9rem;
     }
 
+    .choices__list--multiple .choices__item {
+      background-color: #0d6efd !important;
+      color: #fff !important;
+      border: none !important;
+      border-radius: 6px;
+      padding: 3px 8px;
+      margin: 2px 4px;
+      font-size: 0.85rem;
+    }
+
+    /* === TABLA === */
     thead th {
       background-color: #2c3e50;
       color: white;
@@ -78,34 +93,18 @@
       vertical-align: middle;
     }
 
-    tfoot th {
-      background-color: #e9ecef;
-      font-weight: bold;
-      text-align: center;
-    }
-
     .table-responsive {
       border-radius: 10px;
       overflow: hidden;
     }
 
-    /* ===== GRAFICOS ===== */
+    /* === GRAFICO === */
     .chart-container {
       background: white;
       border-radius: 12px;
       padding: 25px;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-      margin-bottom: 35px;
-    }
-
-    .chart-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    @media (max-width: 992px) {
-      .chart-row { grid-template-columns: 1fr; }
+      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+      margin-top: 40px;
     }
 
     .header-bar {
@@ -120,103 +119,53 @@
       color: #0d6efd;
     }
 
-    .select2-container .select2-selection--multiple {
-      min-height: 38px !important;
-      padding: 4px 6px !important;
-      border-radius: 0.5rem !important;
-    }
-
-    .select2-container--bootstrap-5 .select2-selection {
-      border-radius: 0.5rem;
-    }
-
-    .select2-container .select2-selection__choice {
-      padding: 1px 6px;
-      margin-top: 4px;
-    }
-
-    /* === TABLA DE RESUMEN: estilo profesional y alineado === */
+    /* ==== ALINEAR COLUMNAS ==== */
     #tablaEspecialistas {
       width: 100%;
+      table-layout: fixed; /* Fuerza que todas las columnas tengan el mismo ancho */
       border-collapse: collapse;
-      font-size: 14px;
     }
 
-    #tablaEspecialistas thead th {
-      background-color: #f8fafc;
-      color: #1f2937;
+    #tablaEspecialistas th,
+    #tablaEspecialistas td {
+      width: 20%; /* 5 columnas => 100/5 */
+      text-align: center;
+      vertical-align: middle;
+      padding: 10px;
+    }
+
+    /* Primera columna (especialista) alineada a la izquierda */
+    #tablaEspecialistas th:first-child,
+    #tablaEspecialistas td:first-child {
+      text-align: left;
+      padding-left: 18px;
+    }
+
+    /* Fila total */
+    #tablaEspecialistas tr.fila-total {
+      background-color: #f8f9fa;
       font-weight: 700;
-      text-transform: uppercase;
-      text-align: center;
-      padding: 10px;
-      border-bottom: 2px solid #dee2e6;
+      border-top: 2px solid #dee2e6;
     }
 
-    #tablaEspecialistas tbody td,
-    #tablaEspecialistas tbody th {
-      padding: 10px;
+    #tablaEspecialistas tr.fila-total td {
       text-align: center;
-      border-bottom: 1px solid #e9ecef;
       vertical-align: middle;
     }
 
-    #tablaEspecialistas tbody tr:nth-child(even) {
-      background-color: #f9fafb;
-    }
-
-    #tablaEspecialistas tbody tr:hover {
-      background-color: #f1f5f9;
-    }
-
-    /* Columna del especialista alineada a la izquierda */
-    #tablaEspecialistas tbody td:first-child,
-    #tablaEspecialistas thead th:first-child {
-      text-align: left;
-      padding-left: 18px;
-    }
-
-    /* === FILA TOTAL FINAL === */
-    #tablaEspecialistas tfoot tr {
-      background-color: #f1f3f5;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    #tablaEspecialistas tfoot th {
-      padding: 10px;
-      text-align: center;
-      border-top: 2px solid #cbd5e1;
-    }
-
-    #tablaEspecialistas tfoot th:first-child {
-      text-align: left;
-      padding-left: 18px;
-    }
-
-
-    #fechaInicio, #fechaFin {
-      display: none;
-    }
-
-    #btnActualizarGrafico {
-      display: none;
-    }
-
-    #selectRango {
-      min-width: 150px;
-    }
   </style>
 </head>
+
 <body>
   <!-- ===== HEADER ===== -->
-  <header class="d-flex align-items-center justify-content-between">
+  <header class="d-flex align-items-center justify-content-between p-3 bg-white shadow-sm">
     <div class="d-flex align-items-center gap-3">
       <img src="{{ url_for('static', filename='img/logo_sifods.svg') }}" alt="SIFODS" height="45">
       <h5 class="m-0 fw-semibold text-secondary">Sistema de Análisis de Tickets</h5>
     </div>
   </header>
-  <div class="container mt-4 mb-5">
 
+  <div class="container mt-4 mb-5">
     <!-- ======= Encabezado ======= -->
     <div class="header-bar">
       <i class="fa-solid fa-users-gear"></i>
@@ -227,27 +176,20 @@
     <!-- ======= KPI Cards ======= -->
     <div class="kpi-container">
       <div class="kpi-card border-start border-4 border-info">
-        <div class="text-info fw-semibold">
-          <i class="fa-solid fa-user-gear"></i> Especialistas Activos
-        </div>
+        <div class="text-info fw-semibold"><i class="fa-solid fa-user-gear"></i> Especialistas Activos</div>
         <div class="kpi-value text-info" id="kpi-especialistas">0</div>
       </div>
-
       <div class="kpi-card border-start border-4 border-warning">
-        <div class="text-warning fw-semibold">
-          <i class="fa-solid fa-tasks"></i> Tickets en Proceso
-        </div>
+        <div class="text-warning fw-semibold"><i class="fa-solid fa-tasks"></i> Tickets en Proceso</div>
         <div class="kpi-value text-warning" id="kpi-proceso">0</div>
       </div>
-
       <div class="kpi-card border-start border-4 border-primary">
-        <div class="text-primary fw-semibold">
-          <i class="fa-solid fa-layer-group"></i> Total de Requerimientos
-        </div>
+        <div class="text-primary fw-semibold"><i class="fa-solid fa-layer-group"></i> Total de Requerimientos</div>
         <div class="kpi-value text-primary" id="kpi-total">0</div>
       </div>
     </div>
 
+    <!-- ======= FILTROS ======= -->
     <div class="filter-container">
       <h5 class="fw-semibold mb-3">
         <i class="fa-solid fa-filter text-primary me-2"></i> Filtros dinámicos
@@ -268,64 +210,59 @@
       </div>
     </div>
 
-    <!-- ======= TABLA RESUMEN ======= -->
+    <!-- ======= TABLA ======= -->
     <div class="table-responsive shadow-sm bg-white p-3 rounded mt-4">
       <table id="tablaEspecialistas" class="table align-middle mb-0">
         <thead>
           <tr>
-            <th>ESPECIALISTA FUNCIONAL TI</th>
+            <th><i class="fa-solid fa-file-lines text-primary me-1"></i> ESPECIALISTA FUNCIONAL TI</th>
             <th class="text-primary">ASIGNADO</th>
             <th class="text-warning">EN PROCESO</th>
             <th class="text-danger">PENDIENTE</th>
             <th class="text-primary">TOTAL DE REQUERIMIENTOS</th>
           </tr>
         </thead>
-        <tbody>
-          <!-- filas dinámicas -->
-        </tbody>
+        <tbody></tbody>
       </table>
     </div>
-    <br>
-    <br>
-    <br>
     <!-- ======= GRÁFICO ATENDIDOS ======= -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="fw-semibold mb-0">
-        <i class="fa-solid fa-chart-line text-success"></i> Tickets Atendidos
-      </h5>
-      <div class="d-flex align-items-center gap-2">
-        <select id="selectRango" class="form-select form-select-sm w-auto">
-          <option value="hoy">Hoy</option>
-          <option value="semana" selected>Última Semana</option>
-          <option value="rango">Rango Personalizado</option>
-        </select>
+    <div class="chart-container mt-5">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-semibold mb-0">
+          <i class="fa-solid fa-chart-line text-success me-2"></i> Tickets Atendidos
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <select id="selectRango" class="form-select form-select-sm w-auto">
+            <option value="hoy">Hoy</option>
+            <option value="semana" selected>Última Semana</option>
+            <option value="rango">Rango Personalizado</option>
+          </select>
 
-        <input type="date" id="fechaInicio" class="form-control form-control-sm" style="width:150px;">
-        <input type="date" id="fechaFin" class="form-control form-control-sm" style="width:150px;">
-        
-        <button id="btnActualizarGrafico" class="btn btn-success btn-sm">
-          <i class="fa-solid fa-rotate-right"></i> Actualizar
-        </button>
+          <input type="date" id="fechaInicio" class="form-control form-control-sm" style="width:150px; display:none;">
+          <input type="date" id="fechaFin" class="form-control form-control-sm" style="width:150px; display:none;">
+          
+          <button id="btnActualizarGrafico" class="btn btn-success btn-sm" style="display:none;">
+            <i class="fa-solid fa-rotate-right"></i> Actualizar
+          </button>
+        </div>
       </div>
-    </div>
-    <canvas id="graficoAtendidos" height="130"></canvas>
 
+      <h6 id="tituloGraficoTotal" class="text-muted mb-2"></h6>
+      <canvas id="graficoAtendidos" height="140"></canvas>
+    </div>
+
+  </div>
 
   <!-- ======= SCRIPTS ======= -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Select2 -->
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
-
-  <!-- Chart.js y DataTables (si los usas) -->
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-
   <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 
-  <!-- Tu script -->
+  <!-- Archivo principal JS -->
   <script src="{{ url_for('static', filename='js/especialistas_ti.js') }}"></script>
 
 </body>

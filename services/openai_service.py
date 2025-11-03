@@ -135,7 +135,7 @@ def obtener_especialista(tipo, requerimiento, area,df_asignacion):
     exact = df[
         (df["CATEGORIA_REQUERIMIENTO"].str.lower() == tipo) &
         (df["REQUERIMIENTO"].str.lower() == req) &
-        (df["EQUIPO"].str.lower() == area)
+        (df["EQUIPO"].str.lower() == area)  #Esta variable esta por mejorar
     ]
     if not exact.empty:
         fila = exact.iloc[0]
@@ -152,9 +152,10 @@ def obtener_especialista(tipo, requerimiento, area,df_asignacion):
 
     return {
         "dni_encargado_proceso": str(fila.get("DNI_ENCARGO_PROCESO", "")),
-        "encargado": fila.get("Encargado del proceso", ""),
+        "encargado": fila.get("Encargdo del proceso", ""),
         "rol_proceso": fila.get("Rol del proceso", ""),
         "dni_coordinador": str(fila.get("DNI_COORDINADOR_PROCESO", "")),
+        "coordinador": fila.get("coordinador del proceso", ""),
         "equipo": fila.get("EQUIPO", ""),
         "categoria_requerimiento": fila.get("CATEGORIA_REQUERIMIENTO", ""),
         "requerimiento": fila.get("REQUERIMIENTO", "")
@@ -191,17 +192,27 @@ def generar_respuesta(ticket_info: dict):
         especialista = ticket_info.get("especialista", {}).get("encargado", "nuestro equipo")
 
         prompt = f"""
-        Redacta una respuesta profesional y empática en español para el usuario {nombre},
+        Redacta una respuesta profesional, empática y clara en español para el usuario {nombre},
         respecto al ticket N°{ticket_id}. El texto del ticket es:
         "{descripcion}"
 
-        Informa que el requerimiento ha sido clasificado y será atendido por {especialista}
-        del área de {area}. Mantén el mensaje cordial, con lenguaje claro y amable, y termina
-        agradeciendo al usuario por su comunicación.
+        Indica que el requerimiento ha sido clasificado y será atendido por {especialista}
+        del área de {area}. Mantén un tono cordial, claro y respetuoso.
+
+        Al finalizar el mensaje, incluye literalmente esta firma institucional:
+        "Saludos cordiales,
+        área de DIFODS"
         """
 
         response = client.responses.create(model="gpt-4o-mini", input=prompt)
-        return {"respuesta_sugerida": response.output_text.strip()}
+        texto = response.output_text.strip()
+
+        # 🔹 Asegurar que siempre termine con la firma institucional
+        if not texto.lower().strip().endswith("área de difods") and "Saludos cordiales" not in texto:
+            texto += "\n\nSaludos cordiales,\nárea de DIFODS"
+
+        return {"respuesta_sugerida": texto}
+
     except Exception as e:
         return {"error": str(e)}
 

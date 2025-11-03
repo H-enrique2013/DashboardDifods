@@ -1,7 +1,49 @@
 let dataGlobal = [];
 let dataTable;
+let choicesDireccion, choicesArea, choicesTipo;
 
 document.addEventListener("DOMContentLoaded", async () => {
+  
+  // ============================================================
+  // 🔵 LOADER INICIAL - CARGANDO DATOS
+  // ============================================================
+  const loaderInicio = document.createElement("div");
+  loaderInicio.id = "loader-inicial";
+  loaderInicio.innerHTML = `
+    <div class="loader-content">
+      <div class="spinner-border text-primary" role="status"></div>
+      <span class="ms-3 fw-semibold text-primary">Cargando datos...</span>
+    </div>
+  `;
+  document.body.appendChild(loaderInicio);
+
+  // Estilos del loader
+  const styleLoader = document.createElement("style");
+  styleLoader.textContent = `
+    #loader-inicial {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(255,255,255,0.92);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 0.6s ease;
+    }
+    #loader-inicial.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .loader-content {
+      display: flex;
+      align-items: center;
+      font-size: 1.3rem;
+    }
+  `;
+  document.head.appendChild(styleLoader);
+
   try {
     const res = await fetch("/api/tickets-completo");
     dataGlobal = await res.json();
@@ -9,15 +51,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     inicializarFiltros();
     actualizarTabla();
 
-    // === Inicializar rango de fechas por defecto ===
+
+
+    // === Inicializar rango de fechas ===
     const hoy = new Date().toISOString().split("T")[0];
     document.getElementById("fechaInicio").value = hoy;
     document.getElementById("fechaFin").value = hoy;
 
-    // === Mostrar gráfico de la última semana al cargar ===
     actualizarGrafico("semana");
 
-    // === Evento: cambio de rango (Hoy / Semana / Rango) ===
+
+    // Ocultar loader inicial (tanto si carga OK como si hay error)
+    function ocultarLoader() {
+      loaderInicio.classList.add("hide");
+      setTimeout(() => loaderInicio.remove(), 700);
+    }
+
+    // Ocultar loader tras animación (~2.5s)
+    setTimeout(ocultarLoader, 2500);
+
+
+    // === Eventos para rango de fechas ===
     document.getElementById("selectRango").addEventListener("change", e => {
       const rango = e.target.value;
       const fechaInicio = document.getElementById("fechaInicio");
@@ -36,132 +90,113 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-    // === Evento: botón "Actualizar" ===
     document.getElementById("btnActualizarGrafico").addEventListener("click", () => {
       const inicio = document.getElementById("fechaInicio").value;
       const fin = document.getElementById("fechaFin").value;
-      if (!inicio || !fin) {
-        alert("Selecciona ambas fechas de inicio y fin.");
-        return;
-      }
+      if (!inicio || !fin) return alert("Selecciona ambas fechas.");
       actualizarGrafico("rango", inicio, fin);
     });
 
   } catch (err) {
     console.error("❌ Error al cargar data:", err);
+    ocultarLoader();
   }
 });
 
-
-// === Inicializar filtros dependientes ===
+// === Inicializar filtros dependientes con Choices.js ===
 function inicializarFiltros() {
   const direcciones = [...new Set(dataGlobal.map(d => d.DIRECCION))].sort();
   llenarSelect("filtroDireccion", direcciones);
 
-  // Dirección → Área
-  $('#filtroDireccion').on('change.select2', () => {
-    const selDir = obtenerSeleccion("filtroDireccion");
-    const base = dataGlobal.filter(d =>
-      selDir.length === 0 || selDir.includes("__all__") || selDir.includes(d.DIRECCION)
-    );
+  // Inicialización Choices.js
+  choicesDireccion = crearChoices("#filtroDireccion");
+  choicesArea = crearChoices("#filtroArea");
+  choicesTipo = crearChoices("#filtroTipo");
 
+  // === Eventos ===
+  document.getElementById("filtroDireccion").addEventListener("change", () => {
+    const selDir = obtenerSeleccion(choicesDireccion);
+    const base = dataGlobal.filter(d =>
+      selDir.length === 0 || selDir.includes(d.DIRECCION)
+    );
     const areas = [...new Set(base.map(d => d.AREA))].sort();
     llenarSelect("filtroArea", areas);
-    llenarSelect("filtroTipo", []); // Reset tipo
-
+    choicesArea.destroy();
+    choicesArea = crearChoices("#filtroArea");
+    llenarSelect("filtroTipo", []);
     actualizarTabla();
   });
 
-  // Área → Tipo
-  $('#filtroArea').on('change.select2', () => {
-    const selDir = obtenerSeleccion("filtroDireccion");
-    const selArea = obtenerSeleccion("filtroArea");
-
+  document.getElementById("filtroArea").addEventListener("change", () => {
+    const selDir = obtenerSeleccion(choicesDireccion);
+    const selArea = obtenerSeleccion(choicesArea);
     const base = dataGlobal.filter(d =>
-      (selDir.length === 0 || selDir.includes("__all__") || selDir.includes(d.DIRECCION)) &&
-      (selArea.length === 0 || selArea.includes("__all__") || selArea.includes(d.AREA))
+      (selDir.length === 0 || selDir.includes(d.DIRECCION)) &&
+      (selArea.length === 0 || selArea.includes(d.AREA))
     );
-
     const tipos = [...new Set(base.map(d => d["TIPO REQUERIMIENTO"]))].sort();
     llenarSelect("filtroTipo", tipos);
-
+    choicesTipo.destroy();
+    choicesTipo = crearChoices("#filtroTipo");
     actualizarTabla();
   });
 
-  // Tipo → actualiza tabla
-  $('#filtroTipo').on('change.select2', actualizarTabla);
+  document.getElementById("filtroTipo").addEventListener("change", actualizarTabla);
 }
 
+// === Crear instancia Choices.js ===
+function crearChoices(selector) {
+  return new Choices(selector, {
+    removeItemButton: true,
+    searchEnabled: true,
+    searchPlaceholderValue: "Buscar...",
+    noResultsText: "Sin coincidencias",
+    itemSelectText: "",
+    shouldSort: false,
+    position: "bottom",
+  });
+}
 
-// === Llenar selects con Select2 y “Seleccionar todo” ===
+// === Llenar select dinámicamente ===
 function llenarSelect(id, opciones) {
   const sel = document.getElementById(id);
-  sel.innerHTML = '<option value="__all__">✅ Seleccionar todo</option>' +
-    opciones.map(o => `<option value="${o}">${o}</option>`).join("");
-
-  // Evitar duplicación de instancias Select2
-  if ($(`#${id}`).data('select2')) {
-    $(`#${id}`).select2('destroy');
-  }
-
-  $(`#${id}`).select2({
-    theme: "bootstrap-5",
-    placeholder: "Selecciona una o varias opciones",
-    allowClear: true,
-    closeOnSelect: false,
-    width: "100%",
-    language: { noResults: () => "Sin resultados" },
-    dropdownAutoWidth: true
-  });
-
-  // Opción “Seleccionar todo”
-  $(`#${id}`).on("select2:select", function (e) {
-    if (e.params.data.id === "__all__") {
-      const allValues = $(this).find("option:not([value='__all__'])").map(function () {
-        return $(this).val();
-      }).get();
-      const current = $(this).val() || [];
-      const isAllSelected = current.length === allValues.length;
-      $(this).val(isAllSelected ? [] : allValues).trigger("change");
-    }
+  sel.innerHTML = "";
+  opciones.forEach(o => {
+    const opt = document.createElement("option");
+    opt.value = o;
+    opt.textContent = o;
+    sel.appendChild(opt);
   });
 }
 
-
-// === Obtener valores seleccionados ===
-function obtenerSeleccion(id) {
-  return Array.from(document.getElementById(id).selectedOptions).map(opt => opt.value);
+// === Obtener valores seleccionados desde Choices ===
+function obtenerSeleccion(choicesInstance) {
+  return choicesInstance.getValue(true);
 }
 
-
-// === Actualizar tabla ===
+// === Actualizar tabla según filtros ===
 function actualizarTabla() {
-  const dir = obtenerSeleccion("filtroDireccion");
-  const area = obtenerSeleccion("filtroArea");
-  const tipo = obtenerSeleccion("filtroTipo");
+  const dir = obtenerSeleccion(choicesDireccion);
+  const area = obtenerSeleccion(choicesArea);
+  const tipo = obtenerSeleccion(choicesTipo);
 
   const filtradas = dataGlobal.filter(d =>
-    (dir.includes("__all__") || dir.length === 0 || dir.includes(d.DIRECCION)) &&
-    (area.includes("__all__") || area.length === 0 || area.includes(d.AREA)) &&
-    (tipo.includes("__all__") || tipo.length === 0 || tipo.includes(d["TIPO REQUERIMIENTO"]))
+    (dir.length === 0 || dir.includes(d.DIRECCION)) &&
+    (area.length === 0 || area.includes(d.AREA)) &&
+    (tipo.length === 0 || tipo.includes(d["TIPO REQUERIMIENTO"]))
   );
 
   generarTablaResumen(filtradas);
 }
 
-
 // === Generar tabla resumen ===
 function generarTablaResumen(dataFiltrada) {
   const agrupado = {};
-
-  // Agrupar por especialista
   dataFiltrada.forEach(r => {
     const esp = r["ESPECIALISTA FUNCIONAL TI"] || "SIN ASIGNAR";
     const estado = (r["ESTADO"] || "").toUpperCase();
 
-    if (!agrupado[esp]) {
-      agrupado[esp] = { asignado: 0, proceso: 0, pendiente: 0, total: 0 };
-    }
+    if (!agrupado[esp]) agrupado[esp] = { asignado: 0, proceso: 0, pendiente: 0, total: 0 };
 
     if (estado.includes("ASIGNADO")) agrupado[esp].asignado++;
     else if (estado.includes("PROCESO")) agrupado[esp].proceso++;
@@ -171,12 +206,10 @@ function generarTablaResumen(dataFiltrada) {
       agrupado[esp].asignado + agrupado[esp].proceso + agrupado[esp].pendiente;
   });
 
-  // Calcular totales generales
   let totAsig = 0, totProc = 0, totPend = 0, totTot = 0;
   const filas = [];
 
   Object.entries(agrupado).forEach(([esp, v]) => {
-    // Mostrar solo filas con algún total > 0
     if (v.total > 0) {
       totAsig += v.asignado;
       totProc += v.proceso;
@@ -194,35 +227,32 @@ function generarTablaResumen(dataFiltrada) {
     }
   });
 
-  // Si no hay datos
   if (filas.length === 0) {
     document.querySelector("#tablaEspecialistas tbody").innerHTML = `
       <tr><td colspan="5" class="text-center text-muted py-3">
-      Sin registros para los filtros seleccionados.</td></tr>
-    `;
+      Sin registros para los filtros seleccionados.</td></tr>`;
     return;
   }
 
-  // Fila total
+  // Reemplaza tu bloque de fila total por esto:
+  // Fila total corregida
   filas.push(`
-    <tr class="fw-bold" style="background-color: #f1f3f5;">
-      <th>TOTAL DE REQUERIMIENTOS</th>
-      <th>${totAsig}</th>
-      <th>${totProc}</th>
-      <th>${totPend}</th>
-      <th>${totTot}</th>
+    <tr class="fw-bold fila-total">
+      <td><i class="fa-solid fa-file-lines text-primary me-1"></i> TOTAL DE REQUERIMIENTOS</td>
+      <td>${totAsig}</td>
+      <td>${totProc}</td>
+      <td>${totPend}</td>
+      <td class="text-primary fw-bold">${totTot}</td>
     </tr>
   `);
 
-  // Insertar tabla
+
   document.querySelector("#tablaEspecialistas tbody").innerHTML = filas.join("");
 
-  // Actualizar KPIs
   document.getElementById("kpi-total").textContent = totTot;
   document.getElementById("kpi-proceso").textContent = totProc;
   document.getElementById("kpi-especialistas").textContent = filas.length - 1;
 }
-
 
 function actualizarGrafico(rango = "semana", fechaInicio = null, fechaFin = null) {
   const ctx = document.getElementById("graficoAtendidos");

@@ -179,7 +179,7 @@ def api_ai_ticket_post():
             descripcion_ticket=descripcion,
             datos_usuario=ticket
         )
-        print("🟢 Resultado :", resultado)
+        #print("🟢 Resultado :", resultado)
         # 4️⃣ Retornar el JSON unificado
         return jsonify({
             "ticket": ticket.get("TICKET"),

@@ -210,8 +210,10 @@ document.addEventListener("DOMContentLoaded", () => {
             data.especialista && data.especialista !== "No encontrado"
               ? `
               <div class="ms-3">
+                <p><b>📄 DNI Encargado:</b> ${data.especialista.dni_encargado_proceso || "-"}</p>
                 <p><b>👤 Encargado:</b> ${data.especialista.encargado || "-"}</p>
-                <p><b>🪪 DNI Coordinador:</b> ${data.especialista.dni_coordinador || "-"}</p>
+                <p><b>📄 DNI Coordinador:</b> ${data.especialista.dni_coordinador || "-"}</p>
+                <p><b>👤 Coordinador:</b> ${data.especialista.coordinador || "-"}</p>
                 <p><b>💼 Rol del Proceso:</b> ${data.especialista.rol_proceso || "-"}</p>
                 <p><b>🏢 Equipo:</b> ${data.especialista.equipo || "-"}</p>
               </div>
@@ -229,19 +231,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 <table class="table table-sm table-striped align-middle">
                   <thead class="table-light">
                     <tr>
-                      <th>Actividad</th>
-                      <th>Producto</th>
+                      <th>Especialista</th>
+                      <th>Actividades</th>
+                      <th>Denominación</th>
                       <th>Entregable</th>
-                    </tr>
+                      <th>Productos</th>
+                      </tr>
                   </thead>
                   <tbody>
                     ${data.tdr
                       .map(
                         tdr => `
                         <tr>
-                          <td>${tdr.ACTIVIDAD || "-"}</td>
-                          <td>${tdr.PRODUCTO || "-"}</td>
+                          <td>${tdr.CONTRATISTA || "-"}</td>
+                          <td>${tdr.Actividades || "-"}</td>
+                          <td>${tdr.DENOMINACIÓN || "-"}</td>
                           <td>${tdr.ENTREGABLE || "-"}</td>
+                          <td>${tdr.PRODUCTOS || "-"}</td>
                         </tr>
                       `
                       )
